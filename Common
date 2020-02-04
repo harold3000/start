@@ -1,0 +1,126 @@
+#Permanently add a directory to shell PATH
+
+#Open the file
+vi ~/.bash_profile
+#Set the PATH
+PATH:$/path/to/bin/
+#Reload the changes
+source ~/.bash_profile
+#Verify it
+echo $PATH
+
+#Openn IGV, locate the install file
+java --module-path=lib -Xmx4g @igv.args --module=org.igv/org.broad.igv.ui.Main
+
+
+#Root install
+# https://www.youtube.com/watch?v=6bNy44v06qA
+# CERN ROOT Installation in Ubuntu 18.04 and Enabling all libraries
+# Required packages
+sudo apt-get install git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel
+# Download ROOT files
+sudo git clone https://github.com/root-mirror/root.git
+
+mkdir build
+cd build
+cmake ~/yonggang/cnvnator/root_v6.16/root/ -Dall=ON
+cmake --build . -- -j8
+. bin/thisroot.sh
+
+# Setting the Environment Variables
+# 1 Define the variable $ROOTSYS to the directory where you unpacked the ROOT:
+export ROOTSYS=/home/yonggang/yonggang/cnvnator/root_v6.16/build
+# 2 Add ROOTSYS/bin to your PATH:
+export PATH=$PATH:$ROOTSYS/bin
+# 3 Setting the Library Path:
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ROOTSYS/lib
+
+gedit .bashrc
+
+#vawk install
+conda install -c bioconda vawk
+#svtyper install
+conda install -c bioconda svtyper
+#bamkit install
+conda install -c biobuilds bamkit
+
+# VEP install
+# install perl packages
+perl -MCPAN -e shell
+install Archive::Zip
+install Archive::Extract
+install Archive::Tar
+install DBD::mysql
+install DBI
+install CGI
+install Time::HiRes
+
+#The FASTA file should be automatically detected by the VEP when using --cache or --offline.
+#If it is not, use "--fasta /home/yonggang/.vep/homo_sapiens/96_GRCh38/Homo_sapiens.GRCh38.dna.toplevel.fa.gz"
+
+# install cache
+perl INSTALL.pl -a cf -s homo_sapiens -y GRCh37
+
+bwa index human_g1k_v37.fasta
+
+# make the CNVnator chroms
+mkdir -p ~/yonggang/speedseq/annotations/cnvnator_chroms
+cd ~/yonggang/speedseq/annotations/cnvnator_chroms
+cat ~/yonggang/speedseq/genomes/human_g1k_v37.fasta | awk 'BEGIN { CHROM="" } { if ($1~"^>") CHROM=substr($1,2); print $0 > CHROM".fa" }'
+
+# install Variant Effect Predictor
+curl -OL https://github.com/Ensembl/ensembl-tools/archive/release/76.zip
+unzip 76.zip
+perl ~/yonggang/speedseq/vep/ensembl-tools-release-76/scripts/variant_effect_predictor/INSTALL.pl \
+	-c $SPEEDSEQ_DIR/annotations/vep_cache \
+	-a ac -s homo_sapiens -y hg38
+cp ensembl-tools-release-76/scripts/variant_effect_predictor/variant_effect_predictor.pl $SPEEDSEQ_DIR/bin
+cp -r Bio $SPEEDSEQ_DIR/bin
+# Update the VEP and VEP_CACHE_DIR variables in speedseq.config to point to
+# $SPEEDSEQ_DIR/bin/variant_effect_predictor.pl and $SPEEDSEQ_DIR/annotations/vep_cache
+
+
+# Gemini install
+git clone https://github.com/arq5x/gemini.git
+cd gemini
+sudo python setup.py install
+##Bug
+pip install numpy
+
+##Bug_choose which python to use
+alias python='python3'
+#OR
+sudo ln -sf /usr/bin/python3 /usr/bin/python
+
+##Bug_ModuleNotFoundError: No module named 'setuptools'
+sudo apt-get install python3-setuptools
+sudo apt-get install python3-dev
+
+python gemini/install-data.py /usr/local/share/
+
+# install bcbio-nextgen
+python bcbio_nextgen_install.py ~/local/share/bcbio --tooldir=~/local --genomes GRCh37 --aligners bwa --aligners bowtie2
+
+sudo gemini update --dataonly --extra cadd_score
+sudo gemini update --dataonly --extra gerp_bp
+
+########################################################################
+#CollectWgsMetrics (Picard)#
+java -jar picard.jar CollectWgsMetrics I=Total-B_L1L2.sorted.markdup.BQSR.bam O=Total-B_L1L2_collect_wgs_metrics.txt R=Homo_sapiens_assembly38.fasta
+java -jar picard.jar CollectWgsMetrics I=EBV-transformed_L1L2.sorted.markdup.BQSR.bam O=EBV-transformed_L1L2_collect_wgs_metrics.txt R=Homo_sapiens_assembly38.fasta
+
+java -jar picard.jar CollectWgsMetrics I=BCBL1_L1L2.sorted.markdup.BQSR.bam O=BCBL1_L1L2_collect_wgs_metrics.txt R=Homo_sapiens_assembly38.fasta
+java -jar picard.jar CollectWgsMetrics I=BC3_L1L2.sorted.markdup.BQSR.bam O=BC3_L1L2_collect_wgs_metrics.txt R=Homo_sapiens_assembly38.fasta
+
+java -jar picard.jar CollectWgsMetrics I=BL41_L1L2.sorted.markdup.BQSR.bam O=BL41_L1L2_collect_wgs_metrics.txt R=Homo_sapiens_assembly38.fasta
+java -jar picard.jar CollectWgsMetrics I=DLCL2_L1L2.sorted.markdup.BQSR.bam O=DLCL2_L1L2_collect_wgs_metrics.txt R=Homo_sapiens_assembly38.fasta
+
+java -jar picard.jar CollectWgsMetrics I=LCL1_L1L2.sorted.markdup.BQSR.bam O=LCL1_L1L2_collect_wgs_metrics.txt R=Homo_sapiens_assembly38.fasta
+java -jar picard.jar CollectWgsMetrics I=LCL2_L1L2.sorted.markdup.BQSR.bam O=LCL2_L1L2_collect_wgs_metrics.txt R=Homo_sapiens_assembly38.fasta
+
+java -jar picard.jar CollectWgsMetrics I=BJAB_L1L2.sorted.markdup.BQSR.bam O=BJAB_L1L2_collect_wgs_metrics.txt R=Homo_sapiens_assembly38.fasta
+java -jar picard.jar CollectWgsMetrics I=Raji_L1L2.sorted.markdup.BQSR.bam O=Raji_L1L2_collect_wgs_metrics.txt R=Homo_sapiens_assembly38.fasta
+
+java -jar picard.jar CollectWgsMetrics I=MOLT4_L1L2.sorted.markdup.BQSR.bam O=MOLT4_L1L2_collect_wgs_metrics.txt R=Homo_sapiens_assembly38.fasta
+java -jar picard.jar CollectWgsMetrics I=SUDHL10_L1L2.sorted.markdup.BQSR.bam O=SUDHL10_L1L2_collect_wgs_metrics.txt R=Homo_sapiens_assembly38.fasta
+########################################################################
